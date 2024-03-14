@@ -261,19 +261,42 @@ const deleteComment = async (req, res) => {
   }
 };
 
-// Controller function to handle retweeting a tweet
+// Controller function to retweet from a tweet
 const retweet = async (req, res) => {
   try {
-    const tweet = await Tweet.findById(req.params.id).populate("tweetedBy");
+    const tweetToRetweet = await Tweet.findById(req.params.id);
 
-    if (!tweet) {
+    if (!tweetToRetweet) {
       return res.status(404).json({
-        success: true,
+        success: false,
         message: "Tweet not found",
       });
     }
 
-    res.status(200).send(tweet);
+    // Create a new tweet with the same content and image
+    const newTweet = new Tweet({
+      content: tweetToRetweet.content,
+      tweetedBy: req.user._id,
+      image: tweetToRetweet.image,
+      retweetedFrom: tweetToRetweet._id,
+    });
+
+    // Save the new retweet
+    const retweetedTweet = await newTweet.save();
+
+    // Update the original tweet's retweet count and retweetedBy array
+    tweetToRetweet.retweetedBy.push(req.user._id);
+    tweetToRetweet.save();
+
+    // Update user's tweets
+    const user = await User.findById(req.user._id);
+    user.tweets.push(retweetedTweet._id);
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: retweetedTweet,
+    });
   } catch (error) {
     res.status(500).json({
       success: false,

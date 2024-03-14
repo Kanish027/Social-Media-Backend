@@ -22,7 +22,7 @@ const tweetSchame = new mongoose.Schema(
     retweetedBy: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User", // Reference to the User model for users who retweeted the tweet
+        ref: "User",
       },
     ],
     image: {
